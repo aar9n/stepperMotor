@@ -3,7 +3,10 @@
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
-Adafruit_StepperMotor *myStepper = AFMS.getStepper(200, 2);
+/** Change the second argument of getStepper to 1 HERE --> **/ Adafruit_StepperMotor *myStepper = AFMS.getStepper(200, 2);
+/** to use terminal 1 (M1, M2) of the motor shield instead of terminal 2. This
+    should not be necessary unless you are troubleshooting the motor shield... again :( 
+    Accordingly, change it to 2 to use terminal 2 (M3, M4)**/
     
 int switchState_1 = 0;
 int switchState_2 = 0;
@@ -17,6 +20,11 @@ const int switchPin_2 = 12;
 int lim1State = 0;
 int lim2State = 0;
 
+/** SWAP the values of lim1Pin and lim2Pin (6-->4 and 4-->6) if the limit switches do
+ *  not correspond to the direction of the motor. this is a possibility, because I was 
+ *  not able to test the motor in my last week, during which I also re-wired the limit switches.
+ */
+ 
 const int lim1Pin = 6;
 const int lim2Pin = 4;
 
@@ -48,7 +56,6 @@ void setup() {
   prev_switchState_2 = digitalRead(switchPin_2);
   
   prevMicroButtonState = digitalRead(microButtonPin);
-  
 }
 
 void loop() {
@@ -59,7 +66,7 @@ void loop() {
     if ((switchState_1 != prev_switchState_1)||(switchState_2 != prev_switchState_2)) {
       delay(100);
       if (switchState_1 == HIGH) {
-        customStep(lim1State, lim1Pin, FORWARD, DOUBLE, 300);
+/**MODIFY stepLimit argument of customStep both HERE --> **/ customStep(lim1State, lim1Pin, FORWARD, DOUBLE, 1350);
       }
       else if ((switchState_1 == LOW)&&(switchState_2 == LOW)) {
         motor_brake();
@@ -67,13 +74,12 @@ void loop() {
         return;
       }
       else if (switchState_2 == HIGH) {
-        customStep(lim2State, lim2Pin, BACKWARD, DOUBLE, 300);
+/**and HERE --> **/ customStep(lim2State, lim2Pin, BACKWARD, DOUBLE, 1350);
+/**to customize the number of steps that the stepper motor takes before stopping if
+   neither was the appropriate limit switch activated nor was the primary switch set to neutral.**/
       }
     }
     
-//The "microButton" is the little red button.
-//The Arduino prompts the user to specify some number of microsteps.
-  
   microButtonState = digitalRead(microButtonPin);
   
     if (microButtonState == HIGH) {
@@ -112,8 +118,6 @@ void loop() {
         }
       }
     }
-    //Inputting anything at all breaks out of the while loop and continues loop().
-    //Only integer values will cause the stepper motor to microstep.
     else {}
   }
   if (paused == true) {
@@ -134,13 +138,6 @@ void loop() {
 
 
 void customStep(int limNumState, int limNumPin, int dir, int stepType, int stepLimit) {
-
-//customStep is a function that consolidates the repetitive, messy lines that would
-//otherwise be everywhere in loop()
-
-//These messy if statements facilitate Serial communication.
-//All directions and stepTypes are assigned to int values in <Adafruit_motorshield.h>.
-//Because they only print as class int, I manually assign the appropriate Strings to each int.
 
   if (dir == 1) {
     dirString = "FORWARD";
@@ -170,7 +167,6 @@ void customStep(int limNumState, int limNumPin, int dir, int stepType, int stepL
 
   myStepper->setSpeed(60);
 
-//Stepper speed is in RPM.
   for (int numSteps = 0; numSteps <= stepLimit; numSteps += 1) {
     update_switchStates();
     if ((switchState_1 == HIGH)||(switchState_2 == HIGH)) {
@@ -210,7 +206,6 @@ void update_switchStates() {
 }
 
 void motor_brake() {
-  //myStepper->setSpeed(0);
-  //myStepper->release();
-  return;
+  myStepper->setSpeed(0);
+  myStepper->release();
 }
